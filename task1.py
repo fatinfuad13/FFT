@@ -81,8 +81,22 @@ class DoodlingApp:
         print("Number of points:", len(self.points))
         #print("Transform logic needed.")
         # self.animate_epicycles(mean_point)
-        complex_points = np.array([complex(x,y) for x,y in self.points])
+        '''complex_points = np.array([complex(x,y) for x,y in self.points])
+        signal = DiscreteSignal(complex_points)'''
+        # Compute mean first
+        x_points = [x for x,y in self.points]
+        y_points = [y for x,y in self.points]
+
+        mean_x = sum(x_points)/len(x_points)
+        mean_y = sum(y_points)/len(y_points)
+
+# Center drawing
+        complex_points = np.array([
+            complex(x - mean_x, y - mean_y)
+            for x,y in self.points])
+
         signal = DiscreteSignal(complex_points)
+
         analyzer = DFTAnalyzer()   # For now only naive
 
         spectrum = analyzer.compute_dft(signal)
@@ -106,14 +120,14 @@ class DoodlingApp:
         self.fourier_coeffs.sort(key=lambda item: item[1], reverse=True)
 
         #  Compute drawing center
-        x_points = [x for x,y in self.points]
+        '''x_points = [x for x,y in self.points]
         y_points = [y for x,y in self.points]
 
         mean_x = sum(x_points)/len(x_points)
-        mean_y = sum(y_points)/len(y_points)
+        mean_y = sum(y_points)/len(y_points)'''
 
         self.num_frames = N
-        self.animate_epicycles((0,0))
+        self.animate_epicycles((mean_x,mean_y))
 
     def animate_epicycles(self, center_offset):
         self.is_animating = True
