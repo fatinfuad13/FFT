@@ -1,7 +1,7 @@
 import tkinter as tk
 import numpy as np
 import math
-from discrete_framework import DiscreteSignal, DFTAnalyzer
+from discrete_framework import DiscreteSignal, DFTAnalyzer,FastFourierTransform
 
 class DoodlingApp:
     def __init__(self, root):
@@ -100,23 +100,20 @@ class DoodlingApp:
             amplitude = abs(spectrum[k]) / N
             phase = np.angle(spectrum[k])
 
-            self.fourier_coeffs.append({
-                "freq": freq,
-                "amplitude": amplitude,
-                "phase": phase
-            })
+            self.fourier_coeffs.append((freq, amplitude, phase))
 
         #  Sort by amplitude (largest circles first)
-        self.fourier_coeffs.sort(key=lambda x: x["amplitude"], reverse=True)
+        self.fourier_coeffs.sort(key=lambda item: item[1], reverse=True)
 
         #  Compute drawing center
-        xs = [p[0] for p in self.points]
-        ys = [p[1] for p in self.points]
-        mean_x = sum(xs) / len(xs)
-        mean_y = sum(ys) / len(ys)
+        x_points = [x for x,y in self.points]
+        y_points = [y for x,y in self.points]
+
+        mean_x = sum(x_points)/len(x_points)
+        mean_y = sum(y_points)/len(y_points)
 
         self.num_frames = N
-        self.animate_epicycles((mean_x, mean_y))
+        self.animate_epicycles((0,0))
 
     def animate_epicycles(self, center_offset):
         self.is_animating = True
@@ -143,14 +140,9 @@ class DoodlingApp:
 
         x,y = self.center_offset
 
-        for component in self.fourier_coeffs:
+        for (freq,radius,phase) in self.fourier_coeffs:
              prev_x, prev_y = x, y
-
-             freq = component["freq"]
-             radius = component["amplitude"]
-             phase = component["phase"]
-
-             angle = 2 * np.pi * freq * t / N + phase
+             angle = 2 * np.pi * freq * t/N + phase
 
              x += radius * np.cos(angle)
              y += radius * np.sin(angle)
@@ -159,7 +151,7 @@ class DoodlingApp:
              self.canvas.create_line(prev_x, prev_y, x, y, fill="red", tags="epicycle")
 
         r = 3
-        self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="black", tags="epicycle")
+        self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="red", tags="epicycle")
 
         self.time_step = (self.time_step + 1)
 

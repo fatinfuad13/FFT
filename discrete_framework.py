@@ -110,3 +110,50 @@ x_reconstructed = dft.compute_idft(X)
 print(signal.data)
 print(x_reconstructed)'''
 
+class FastFourierTransform(DFTAnalyzer):
+    """
+    Radix-2 Decimation-in-Time Cooley-Tukey FFT
+    """
+    def compute_dft(self, signal: DiscreteSignal):
+        """
+        Compute FFT using recursive radix-2 DIT.
+        Input length must be a power of 2. Zero-pad if necessary.
+        Returns: numpy array of complex frequency coefficients.
+        """
+        x = signal.data
+        N = len(x)
+
+        # If N is not a power of 2, pad with zeros
+        if not (N != 0 and ((N & (N - 1)) == 0)):
+            next_pow2 = 1 << (N-1).bit_length()
+            padded = np.zeros(next_pow2, dtype=np.complex128)
+            padded[:N] = x
+            x = padded
+            N = next_pow2
+
+        return self._fft_recursive(x)
+
+    def _fft_recursive(self, x):
+        N = len(x)
+        if N == 1:
+            return x
+        else:
+            # Split even and odd indices
+            X_even = self._fft_recursive(x[::2])
+            X_odd = self._fft_recursive(x[1::2])
+
+            factor = np.exp(-2j * np.pi * np.arange(N) / N)
+            return np.concatenate([
+                X_even + factor[:N//2] * X_odd,
+                X_even - factor[:N//2] * X_odd
+            ])
+
+    def compute_idft(self, spectrum):
+        """
+        Compute inverse FFT.
+        """
+        N = len(spectrum)
+        # Conjugate, compute FFT, then conjugate again
+        x_conj = np.conjugate(spectrum)
+        result = self._fft_recursive(x_conj)
+        return np.conjugate(result) / N
