@@ -97,9 +97,31 @@ class DoodlingApp:
 
         signal = DiscreteSignal(complex_points)
 
-        analyzer = DFTAnalyzer()   # For now only naive
+        import time
 
+        
+
+        if self.use_fft.get():
+            analyzer = FastFourierTransform()
+            
+            N = len(signal.data)
+            lower = 1 << (N.bit_length() - 1)
+            upper = 1 << N.bit_length()
+
+            if N - lower < upper - N:
+                next_pow2 = lower
+            else:
+                next_pow2 = upper
+
+            signal = signal.interpolate(next_pow2)
+        else:
+            analyzer = DFTAnalyzer()
+        
+        start = time.time()
         spectrum = analyzer.compute_dft(signal)
+        end = time.time()
+        print(end-start)
+
         N = len(spectrum)
 
         #  Build frequency list with correct negative mapping

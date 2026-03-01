@@ -134,19 +134,28 @@ class FastFourierTransform(DFTAnalyzer):
         return self._fft_recursive(x)
 
     def _fft_recursive(self, x):
-        N = len(x)
-        if N == 1:
-            return x
-        else:
-            # Split even and odd indices
-            X_even = self._fft_recursive(x[::2])
-            X_odd = self._fft_recursive(x[1::2])
+     N = len(x)
 
-            factor = np.exp(-2j * np.pi * np.arange(N) / N)
-            return np.concatenate([
-                X_even + factor[:N//2] * X_odd,
-                X_even - factor[:N//2] * X_odd
-            ])
+    # Base case
+     if N == 1:
+        return x
+
+    # Recursively compute even and odd parts
+     X_even = self._fft_recursive(x[0::2])
+     X_odd = self._fft_recursive(x[1::2])
+
+    # Allocate output
+     X = np.zeros(N, dtype=complex)
+
+    # Combine
+     for m in range(N):
+        m_alias = m % (N // 2)
+
+        twiddle = np.exp(-2j * np.pi * m / N)
+
+        X[m] = X_even[m_alias] + twiddle * X_odd[m_alias]
+
+     return X
 
     def compute_idft(self, spectrum):
         """
